@@ -5,6 +5,14 @@
   "license": "MIT",
   "engines": {
     "node": "16.x",
-    "npm": "7.x"
+    "yarn": "1.x"
+  },
+  "dependencies": {
+    "discord.js": "^13.3.1",
+    "dotenv": "^10.0.0",
+    "firebase-admin": "^10.0.0"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }
