@@ -1,7 +1,8 @@
 require('dotenv').config()
 
-const { Client, Intents } = require('discord.js');
+const { Client, Intents, Constants } = require('discord.js');
 const admin = require("firebase-admin");
+const slugify = require('slugify');
 
 const { getFirestore } = require("firebase-admin/firestore");
 
@@ -16,8 +17,67 @@ admin.initializeApp({
   }),
 });
 
-const onNewTask = (task) => {
-  console.log(task)
+const getRoomGuildSettings = async (roomName) => {
+  try {
+    const db = getFirestore()
+    const roomDoc = await db.collection('rooms').doc(roomName).get();
+    const roomData = roomDoc.data()
+
+    if (!roomData?.discordGuildId || !roomData?.discordAnnouncementsChannelId || !roomData?.discordNewsroomCategoryChannelId) {
+      return
+    }
+
+    return {
+      guildId: roomData.discordGuildId,
+      announcementsChannelId: roomData.discordAnnouncementsChannelId,
+      newsroomCategoryChannelId: roomData.discordNewsroomCategoryChannelId
+    }
+  } catch (error) {
+    console.log(error)
+    return null
+  }
+}
+
+const onNewTask = async (task) => {
+  guildSettings = await getRoomGuildSettings(task.room)
+
+  // Abort if room doesn't have any guild configured
+  if (!guildSettings) {
+    console.log(task.id, task.room, "has no guild settings")
+    return
+  }
+
+  // Abort if task is already announced
+  if (task.discordInviteCode) {
+    console.log(task.id, "is already announced")
+    return
+  }
+
+  // Get the channels
+  console.log(guildSettings)
+  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
+  const newsroomCategoryChannel = await guild.channels.fetch(guildSettings.newsroomCategoryChannelId)
+
+  // Create a task channel
+  const taskSlug = slugify(task.title)
+  const taskChannel = await newsroomCategoryChannel.createChannel(taskSlug)
+
+  // Create the task annoucement
+  const taskLink = `https://newsroom.xyz/rooms/${task.room}/${task.id}`
+  announcementsChannel.send(
+    `📰 New task from ${task.room} just dropped:
+${taskLink}
+Interested? Send a gm in <#${taskChannel.id}>
+`)
+
+  // Create invite to the task
+  const invite = await taskChannel.createInvite({ maxAge: 0 });
+  const db = getFirestore()
+  const taskRef = db.collection("tasks").doc(task.id);
+  await taskRef.update({
+    discordInviteCode: invite.code,
+  });
 }
 
 const onRoomConnection = async (room) => {
@@ -29,26 +89,38 @@ const onRoomConnection = async (room) => {
     return
   }
 
-  // Get the guild by id and create the channel
+  // Get the guild by id
   const guild = client.guilds.cache.get(guildId);
-  const channel = await guild.channels.create("newsroom-announcements", { type: "text" })
-  console.log(room.id, "create annoucements channel", channel.id)
 
-  // Save the channel id
+  // Create the newsroom category
+  const newsroomCategory = await guild.channels.create("newsroom", { type: Constants.ChannelTypes.GUILD_CATEGORY })
+  console.log(room.id, "create newsroom category", newsroomCategory.id)
+
+  // Create the annoucements channel
+  const annoucementsChannel = await newsroomCategory.createChannel("announcements", { type: Constants.ChannelTypes.GUILD_TEXT })
+  console.log(room.id, "create annoucements channel", annoucementsChannel.id)
+
+
+  // Save the channel ids
   const db = getFirestore()
   const roomRef = db.collection('rooms').doc(room.id);
-  await roomRef.update({discordAnnouncementsChannelId: channel.id});
+  await roomRef.update({
+    discordAnnouncementsChannelId: annoucementsChannel.id,
+    discordNewsroomCategoryChannelId: newsroomCategory.id
+  });
 }
 
 const listenForNewTasks = () => {
   const db = getFirestore();
-  db.collection('tasks').onSnapshot((querySnapshot) => {
+  db
+    .collection('tasks')
+    .onSnapshot((querySnapshot) => {
     querySnapshot.docChanges().forEach(change => {
       if (change.type !== "added") {
         return;
       }
 
-      const task = { id: change.doc.id, ...change.doc.data()}
+      const task = { id: change.doc.id, ...change.doc.data() }
       onNewTask(task);
     })
   });
@@ -74,7 +146,7 @@ const listenForRoomConnections = () => {
 
 client.once('ready', () => {
   console.log('Ready!');
-  //listenForNewTasks();
+  listenForNewTasks();
   listenForRoomConnections();
 });
 
