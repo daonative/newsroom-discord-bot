@@ -127,7 +127,7 @@ const onRoomConnection = async (room) => {
 }
 
 const listenForNewTasks = () => {
-  const start = new Date('Nov 20, 2021 00:00:01 GMT+00:00')
+  const start = new Date('Nov 23, 2021 12:00:01 GMT+00:00')
   const db = getFirestore();
   db
     .collection('tasks')
