@@ -57,9 +57,15 @@ const onNewTask = async (task) => {
     return
   }
 
+  // Abort if task is a welcome task
+  if (task.title.startsWith("__Welcome")) {
+    console.log(task.id, task.room, "is a welcome task")
+    return
+  }
+
   // Abort if task is already announced
   if (task.discordInviteCode) {
-    console.log(task.id, "is already announced")
+    console.log(task.id, task.room, "is already announced")
     return
   }
 
