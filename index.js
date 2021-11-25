@@ -120,7 +120,7 @@ const onRoomConnection = async (room) => {
   console.log(room.id, "create newsroom category", newsroomCategory.id)
 
   // Create the annoucements channel
-  const annoucementsChannel = await newsroomCategory.createChannel("announcements", { type: Constants.ChannelTypes.GUILD_TEXT })
+  const annoucementsChannel = await newsroomCategory.createChannel("new-tasks", { type: Constants.ChannelTypes.GUILD_TEXT })
   console.log(room.id, "create annoucements channel", annoucementsChannel.id)
 
   // Save the channel ids
