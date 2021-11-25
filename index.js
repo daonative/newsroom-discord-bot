@@ -74,13 +74,19 @@ const onNewTask = async (task) => {
   const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
   const newsroomCategoryChannel = await guild.channels.fetch(guildSettings.newsroomCategoryChannelId)
 
-  // Create a task channel
+  // Task link and channel name
+  const taskLink = `https://newsroom.xyz/rooms/${task.room}/${task.id}`
   const taskSlug = slugify(task.title).toLowerCase()
   const taskChannelName = `${guildSettings.prependRoomName ? `${task.room}-` : ''}${taskSlug}`
-  const taskChannel = await newsroomCategoryChannel.createChannel(taskChannelName)
 
-  // Create the task annoucement
-  const taskLink = `https://newsroom.xyz/rooms/${task.room}/${task.id}`
+  // Create a task channel
+  const taskChannel = await newsroomCategoryChannel.createChannel(taskChannelName)
+  taskChannel.send(
+    `**${task.title}**
+${taskLink}
+`)
+
+  // Create the task announcement
   announcementsChannel.send(
     `📰 New task from ${task.room} just dropped:
 ${taskLink}
@@ -133,15 +139,19 @@ const listenForNewTasks = () => {
     .collection('tasks')
     .where('created', '>', start)
     .onSnapshot((querySnapshot) => {
-    querySnapshot.docChanges().forEach(change => {
-      if (change.type !== "added") {
-        return;
-      }
+      querySnapshot.docChanges().forEach(change => {
+        if (change.type !== "added") {
+          return;
+        }
 
-      const task = { id: change.doc.id, ...change.doc.data() }
-      onNewTask(task);
-    })
-  });
+        try {
+          const task = { id: change.doc.id, ...change.doc.data() }
+          onNewTask(task);
+        } catch (error) {
+          console.error(error)
+        }
+      })
+    });
 }
 
 const listenForRoomConnections = () => {
@@ -156,8 +166,12 @@ const listenForRoomConnections = () => {
           return;
         }
 
-        const room = { id: change.doc.id, ...change.doc.data() }
-        onRoomConnection(room)
+        try {
+          const room = { id: change.doc.id, ...change.doc.data() }
+          onRoomConnection(room)
+        } catch (error) {
+          console.error(error)
+        }
       })
     });
 }
