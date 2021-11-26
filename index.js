@@ -31,7 +31,7 @@ const getRoomGuildSettings = async (roomName) => {
       guildId: roomData.discordGuildId,
       announcementsChannelId: roomData.discordAnnouncementsChannelId,
       newsroomCategoryChannelId: roomData.discordNewsroomCategoryChannelId,
-      bleedingBot: roomData.bleedingBot || false,
+      bleedingBot: roomData.discordBleedingBot || false,
       prependRoomName: false
     }
   } catch (error) {
