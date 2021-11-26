@@ -31,6 +31,7 @@ const getRoomGuildSettings = async (roomName) => {
       guildId: roomData.discordGuildId,
       announcementsChannelId: roomData.discordAnnouncementsChannelId,
       newsroomCategoryChannelId: roomData.discordNewsroomCategoryChannelId,
+      bleedingBot: roomData.bleedingBot || false,
       prependRoomName: false
     }
   } catch (error) {
@@ -47,6 +48,7 @@ const onNewTask = async (task) => {
       guildId: process.env.DISCORD_DEFAULT_GUILD,
       announcementsChannelId: process.env.DISCORD_DEFAULT_ANNOUCEMENTS_CHANNEL,
       newsroomCategoryChannelId: process.env.DISCORD_DEFAULT_CATEGORY,
+      bleedingBot: false,
       prependRoomName: true
     }
   }
@@ -54,6 +56,11 @@ const onNewTask = async (task) => {
   // Abort if room doesn't have any guild configured
   if (!guildSettings) {
     console.log(task.id, task.room, "was unable to fetch guild settings")
+    return
+  }
+
+  // Abort if discord connection is meant for bleeding bot and this is not the bleeding bot
+  if (guildSettings.bleedingBot && process.env.DISCORD_BLEEDING_BOT !== '1') {
     return
   }
 
