@@ -41,7 +41,7 @@ const getRoomGuildSettings = async (roomName) => {
 
 const onNewTask = async (task) => {
   let guildSettings = await getRoomGuildSettings(task.room)
-  const isBleedingBot = process.env.DISCORD_BLEEDING_BOT !== '1'
+  const isBleedingBot = process.env.DISCORD_BLEEDING_BOT === '1'
 
   // Use default guild settings (if it exists) when the room doesn't have guild settings
   if (!guildSettings && process.env.DISCORD_DEFAULT_GUILD) {
@@ -61,7 +61,7 @@ const onNewTask = async (task) => {
   }
 
   // Abort if discord connection is meant for bleeding bot and this is not the bleeding bot
-  if (guildSettings.bleedingBot === isBleedingBot) {
+  if (guildSettings.bleedingBot !== isBleedingBot) {
     return
   }
 
