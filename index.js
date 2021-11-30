@@ -6,8 +6,8 @@ const slugify = require('slugify');
 
 const { getFirestore } = require("firebase-admin/firestore");
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
-
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const prefix = '!'
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -38,6 +38,31 @@ const getRoomGuildSettings = async (roomName) => {
   }
 }
 
+const getRoomByAnnoucementsChannelId = async (channelId) => {
+  try {
+    const db = getFirestore()
+    const snapshot = await db.collection('rooms').where('discordAnnouncementsChannelId', '==', channelId).get();
+    const docs = snapshot.docs.map((doc) => ({id: doc.id, ...doc.data()}))
+    return docs.shift()
+  } catch (error) {
+    console.log(error)
+    return null
+  }
+}
+
+const onCommandNewTask = async (message, args) => {
+  const room = await getRoomByAnnoucementsChannelId(message.channelId)
+
+  if (!room) return
+
+  const title = args.join(' ')
+  const url = `https://newsroom.xyz/rooms/${room.id}/post?title=${encodeURIComponent(title)}`
+
+  message.channel.send(
+    `Create your task here: ${url}`
+  )
+}
+
 const onNewTask = async (task) => {
   let guildSettings = await getRoomGuildSettings(task.room)
 
@@ -53,19 +78,19 @@ const onNewTask = async (task) => {
 
   // Abort if room doesn't have any guild configured
   if (!guildSettings) {
-    console.log(task.id, task.room, "was unable to fetch guild settings")
+    console.log(task.room, task.id, "was unable to fetch guild settings")
     return
   }
 
   // Abort if task is a welcome task
   if (task.title.startsWith("__Welcome")) {
-    console.log(task.id, task.room, "is a welcome task")
+    console.log(task.room, task.id, "is a welcome task")
     return
   }
 
   // Abort if task is already announced
   if (task.discordInviteCode) {
-    console.log(task.id, task.room, "is already announced")
+    console.log(task.room, task.id, "is already announced")
     return
   }
 
@@ -181,5 +206,17 @@ client.once('ready', () => {
   listenForNewTasks();
   listenForRoomConnections();
 });
+
+client.on('messageCreate', async message => {
+  if (message.author.bot) return
+  if (!message.content.startsWith(prefix)) return
+
+  const args = message.content.slice(prefix.length).trim().split(/ +/g);
+  const command = args.shift().toLowerCase();
+
+  if (command === 'newtask') {
+    onCommandNewTask(message, args)
+  }
+})
 
 client.login(process.env.DISCORD_TOKEN);
