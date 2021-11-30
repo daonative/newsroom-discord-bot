@@ -148,6 +148,14 @@ const onRoomConnection = async (room) => {
   const annoucementsChannel = await newsroomCategory.createChannel("new-tasks", { type: Constants.ChannelTypes.GUILD_TEXT })
   console.log(room.id, "create annoucements channel", annoucementsChannel.id)
 
+  // Post first message
+  annoucementsChannel.send(`:new: All new ${room.title} tasks will be announced here.
+
+:question: Use the \`!newtask\` command in this channel to start adding tasks! For example:
+
+> !newtask Write a welcome blog post explaining newsroom.xyz
+`)
+
   // Save the channel ids
   const db = getFirestore()
   const roomRef = db.collection('rooms').doc(room.id);
