@@ -51,9 +51,6 @@ const getRoomByAnnoucementsChannelId = async (channelId) => {
 }
 
 const onCommandNewTask = async (message, args) => {
-  const room = await getRoomByAnnoucementsChannelId(message.channelId)
-
-  if (!room) return
 
   const title = args.join(' ')
   const url = `https://newsroom.xyz/rooms/${room.id}/post?title=${encodeURIComponent(title)}`
