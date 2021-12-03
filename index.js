@@ -38,10 +38,10 @@ const getRoomGuildSettings = async (roomName) => {
   }
 }
 
-const getRoomByAnnoucementsChannelId = async (channelId) => {
+const getRoomByGuildId = async (channelId) => {
   try {
     const db = getFirestore()
-    const snapshot = await db.collection('rooms').where('discordAnnouncementsChannelId', '==', channelId).get();
+    const snapshot = await db.collection('rooms').where('discordGuildId', '==', channelId).get();
     const docs = snapshot.docs.map((doc) => ({id: doc.id, ...doc.data()}))
     return docs.shift()
   } catch (error) {
@@ -51,6 +51,8 @@ const getRoomByAnnoucementsChannelId = async (channelId) => {
 }
 
 const onCommandNewTask = async (message, args) => {
+  const room = await getRoomByGuildId(message.guildId)
+  console.log(room)
 
   const title = args.join(' ')
   const url = `https://newsroom.xyz/rooms/${room.id}/post?title=${encodeURIComponent(title)}`
