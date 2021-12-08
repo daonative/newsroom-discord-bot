@@ -42,7 +42,7 @@ const getRoomByGuildId = async (channelId) => {
   try {
     const db = getFirestore()
     const snapshot = await db.collection('rooms').where('discordGuildId', '==', channelId).get();
-    const docs = snapshot.docs.map((doc) => ({id: doc.id, ...doc.data()}))
+    const docs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
     return docs.shift()
   } catch (error) {
     console.log(error)
@@ -60,6 +60,35 @@ const onCommandNewTask = async (message, args) => {
   message.channel.send(
     `Create your task here: ${url}`
   )
+}
+
+const onNewProposal = async (proposal) => {
+  let guildSettings = await getRoomGuildSettings(proposal.room)
+
+  // Abort if room doesn't have any guild configured
+  if (!guildSettings) {
+    console.log(proposal.room, "proposal", proposal.id, "was unable to fetch guild settings")
+    return
+  }
+
+  // Abort if proposal is already announced
+  if (proposal.discordMessageId) {
+    console.log(proposal.room, "proposal", proposal.id, "is already announced")
+    return
+  }
+
+  // Get the annoucements channel
+  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
+
+  const msg = await announcementsChannel.send(`💡 A new proposal just dropped:
+${proposal.title}
+${proposal.amount} MATIC`)
+
+  // Set the discord message id
+  const db = getFirestore()
+  const proposalId = db.collection("proposals").doc(proposal.id);
+  await proposalId.update({ discordMessageId: msg.id });
 }
 
 const onNewTask = async (task) => {
@@ -165,7 +194,7 @@ const onRoomConnection = async (room) => {
 }
 
 const listenForNewTasks = () => {
-  const start = new Date('Nov 23, 2021 12:00:01 GMT+00:00')
+  const start = new Date('Dec 08, 2021 12:00:00 GMT+00:00')
   const db = getFirestore();
   db
     .collection('tasks')
@@ -179,6 +208,28 @@ const listenForNewTasks = () => {
         try {
           const task = { id: change.doc.id, ...change.doc.data() }
           onNewTask(task);
+        } catch (error) {
+          console.error(error)
+        }
+      })
+    });
+}
+
+const listenForNewProposals = () => {
+  const start = new Date('Dec 08, 2021 12:00:00 GMT+00:00')
+  const db = getFirestore();
+  db
+    .collection('proposals')
+    .where('created', '>', start)
+    .onSnapshot((querySnapshot) => {
+      querySnapshot.docChanges().forEach(change => {
+        if (change.type !== "added") {
+          return;
+        }
+
+        try {
+          const proposal = { id: change.doc.id, ...change.doc.data() }
+          onNewProposal(proposal);
         } catch (error) {
           console.error(error)
         }
@@ -211,6 +262,7 @@ const listenForRoomConnections = () => {
 client.once('ready', () => {
   console.log('Ready!');
   listenForNewTasks();
+  listenForNewProposals();
   listenForRoomConnections();
 });
 
