@@ -67,27 +67,30 @@ const onNewProposal = async (proposal) => {
 
   // Abort if room doesn't have any guild configured
   if (!guildSettings) {
-    console.log(proposal.room, "proposal", proposal.id, "was unable to fetch guild settings")
+    console.log(proposal.room, "proposal", proposal.uri, "was unable to fetch guild settings")
     return
   }
 
   // Abort if proposal is already announced
   if (proposal.discordMessageId) {
-    console.log(proposal.room, "proposal", proposal.id, "is already announced")
+    console.log(proposal.room, "proposal", proposal.uri, "is already announced")
     return
   }
+
 
   // Get the annoucements channel
   const guild = client.guilds.cache.get(guildSettings.guildId)
   const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
 
-  const msg = await announcementsChannel.send(`💡 A new proposal just dropped:
-${proposal.title}
-${proposal.amount} MATIC`)
+  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
+  const msg = await announcementsChannel.send(`💡 New proposal: **${proposal.title} (${proposal.amount} MATIC)**
+${proposalLink}
+
+React with a 🚀 to vote in favor for this proposal.`)
 
   // Set the discord message id
   const db = getFirestore()
-  const proposalId = db.collection("proposals").doc(proposal.id);
+  const proposalId = db.collection("proposals").doc(proposal.uri);
   await proposalId.update({ discordMessageId: msg.id });
 }
 
@@ -221,6 +224,7 @@ const listenForNewProposals = () => {
   db
     .collection('proposals')
     .where('created', '>', start)
+    .where('verified', '==', true)
     .onSnapshot((querySnapshot) => {
       querySnapshot.docChanges().forEach(change => {
         if (change.type !== "added") {
@@ -228,7 +232,7 @@ const listenForNewProposals = () => {
         }
 
         try {
-          const proposal = { id: change.doc.id, ...change.doc.data() }
+          const proposal = { uri: change.doc.id, ...change.doc.data() }
           onNewProposal(proposal);
         } catch (error) {
           console.error(error)
