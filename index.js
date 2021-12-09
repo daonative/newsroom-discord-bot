@@ -97,16 +97,6 @@ React with a 🚀 to vote in favor for this proposal.`)
 const onNewTask = async (task) => {
   let guildSettings = await getRoomGuildSettings(task.room)
 
-  // Use default guild settings (if it exists) when the room doesn't have guild settings
-  if (!guildSettings && process.env.DISCORD_DEFAULT_GUILD) {
-    guildSettings = {
-      guildId: process.env.DISCORD_DEFAULT_GUILD,
-      announcementsChannelId: process.env.DISCORD_DEFAULT_ANNOUCEMENTS_CHANNEL,
-      newsroomCategoryChannelId: process.env.DISCORD_DEFAULT_CATEGORY,
-      prependRoomName: true
-    }
-  }
-
   // Abort if room doesn't have any guild configured
   if (!guildSettings) {
     console.log(task.room, task.id, "was unable to fetch guild settings")
