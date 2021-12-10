@@ -162,7 +162,7 @@ const onRoomConnection = async (room) => {
   const guild = client.guilds.cache.get(guildId);
 
   // Create the newsroom category
-  const newsroomCategory = await guild.channels.create("newsroom", { type: Constants.ChannelTypes.GUILD_CATEGORY })
+  const newsroomCategory = await guild.channels.create(`${room.title} room`, { type: Constants.ChannelTypes.GUILD_CATEGORY })
   console.log(room.id, "create newsroom category", newsroomCategory.id)
 
   // Create the annoucements channel
