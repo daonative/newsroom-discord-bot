@@ -34,6 +34,7 @@ const getRoomGuildSettings = async (roomName) => {
       prependRoomName: false
     }
   } catch (error) {
+    console.log(error)
     return null
   }
 }
