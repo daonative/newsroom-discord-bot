@@ -22,7 +22,6 @@ const getRoomGuildSettings = async (roomName) => {
     const db = getFirestore()
     const roomDoc = await db.collection('rooms').doc(roomName).get();
     const roomData = roomDoc.data()
-    console.log(roomData)
 
     if (!roomData?.discordGuildId || !roomData?.discordAnnouncementsChannelId || !roomData?.discordNewsroomCategoryChannelId) {
       return null
@@ -35,7 +34,7 @@ const getRoomGuildSettings = async (roomName) => {
       prependRoomName: false
     }
   } catch (error) {
-    console.log(error)
+    console.error(error)
     return null
   }
 }
