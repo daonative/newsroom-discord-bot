@@ -51,6 +51,19 @@ const getRoomByGuildId = async (channelId) => {
   }
 }
 
+const getWorkstream = async (workstreamId) => {
+  try {
+    const db = getFirestore()
+    const snapshot = await db.collection('tasks').doc(workstreamId).get();
+    const workstream = snapshot.data()
+    return workstream
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+
+}
+
 const onCommandNewTask = async (message, args) => {
   const room = await getRoomByGuildId(message.guildId)
   console.log(room)
@@ -63,8 +76,52 @@ const onCommandNewTask = async (message, args) => {
   )
 }
 
+const updateProposal = async (proposalUri, data) => {
+  const db = getFirestore()
+  const proposalId = db.collection("proposals").doc(proposalUri);
+  await proposalId.update(data);
+}
+
+const announceProposal = async (proposal, guildSettings) => {
+  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
+
+  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
+  const msg = await announcementsChannel.send(`💡 New proposal: **${proposal.title} (${proposal.amount} MATIC)**
+${proposalLink}
+
+React with a 🚀 to vote in favor for this proposal.`)
+
+  updateProposal(proposal.uri, { discordMessageId: msg.id })
+}
+
+const announceWorkstreamApplication = async (proposal, guildSettings) => {
+  const workstream = await getWorkstream(proposal.workstreamId)
+  const guild = client.guilds.cache.get(guildSettings.guildId)
+  let workstreamChannel;
+
+  if (!workstream.discordChannelName && !workstream.discordChannelId) return
+
+  if (workstream.discordChannelId) {
+    workstreamChannel = guild.channels.cache.get(workstream.discordChannelId)
+  } else {
+    workstreamChannel = guild.channels.cache.find(channel => channel.name === workstream.discordChannelName)
+  }
+  console.log(workstreamChannel)
+
+  if (!workstreamChannel) return
+
+  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
+  const msg = await workstreamChannel.send(`🤺 **${proposal.author}** applied for this task!
+${proposalLink}
+
+React with a 🚀 to vote in favor.`)
+
+  updateProposal(proposal.uri, { discordMessageId: msg.id })
+}
+
 const onNewProposal = async (proposal) => {
-  let guildSettings = await getRoomGuildSettings(proposal.room)
+  const guildSettings = await getRoomGuildSettings(proposal.room)
 
   // Abort if room doesn't have any guild configured
   if (!guildSettings) {
@@ -78,21 +135,11 @@ const onNewProposal = async (proposal) => {
     return
   }
 
-
-  // Get the annoucements channel
-  const guild = client.guilds.cache.get(guildSettings.guildId)
-  const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
-
-  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
-  const msg = await announcementsChannel.send(`💡 New proposal: **${proposal.title} (${proposal.amount} MATIC)**
-${proposalLink}
-
-React with a 🚀 to vote in favor for this proposal.`)
-
-  // Set the discord message id
-  const db = getFirestore()
-  const proposalId = db.collection("proposals").doc(proposal.uri);
-  await proposalId.update({ discordMessageId: msg.id });
+  if (proposal.workstreamId) {
+    announceWorkstreamApplication(proposal, guildSettings)
+  } else {
+    announceProposal(proposal, guildSettings)
+  }
 }
 
 const onNewTask = async (task) => {
@@ -146,6 +193,7 @@ Interested? Send a gm in <#${taskChannel.id}>
   const taskRef = db.collection("tasks").doc(task.id);
   await taskRef.update({
     discordChannelName: taskChannelName,
+    discordChannelId: taskChannel.channelId,
     discordInviteCode: invite.code,
   });
 }
