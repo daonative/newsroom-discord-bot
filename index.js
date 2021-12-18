@@ -83,7 +83,7 @@ const updateProposal = async (proposalUri, data) => {
 }
 
 const announceProposal = async (proposal, guildSettings) => {
-  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const guild = await client.guilds.fetch(guildSettings.guildId)
   const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
 
   const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
@@ -97,7 +97,7 @@ React with a 🚀 to vote in favor for this proposal.`)
 
 const announceWorkstreamApplication = async (proposal, guildSettings) => {
   const workstream = await getWorkstream(proposal.workstreamId)
-  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const guild = await client.guilds.fetch(guildSettings.guildId)
   let workstreamChannel;
 
   if (!workstream.discordChannelName && !workstream.discordChannelId) return
@@ -170,7 +170,7 @@ const onNewTask = async (task) => {
   }
 
   // Get the channels
-  const guild = client.guilds.cache.get(guildSettings.guildId)
+  const guild = await client.guilds.fetch(guildSettings.guildId)
   const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
   const newsroomCategoryChannel = await guild.channels.fetch(guildSettings.newsroomCategoryChannelId)
 
@@ -214,7 +214,7 @@ const onRoomConnection = async (room) => {
   }
 
   // Get the guild by id
-  const guild = client.guilds.cache.get(guildId);
+  const guild = await client.guilds.fetch(guildId);
 
   // Create the newsroom category
   const newsroomCategory = await guild.channels.create(`${room.title} room`, { type: Constants.ChannelTypes.GUILD_CATEGORY })
