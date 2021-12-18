@@ -193,7 +193,7 @@ Interested? Send a gm in <#${taskChannel.id}>
   const taskRef = db.collection("tasks").doc(task.id);
   await taskRef.update({
     discordChannelName: taskChannelName,
-    discordChannelId: taskChannel.channelId,
+    discordChannelId: taskChannel.id,
     discordInviteCode: invite.code,
   });
 }
