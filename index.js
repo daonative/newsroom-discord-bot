@@ -135,11 +135,17 @@ const onNewProposal = async (proposal) => {
     return
   }
 
+  /* Disable proposal applications for now
+
   if (proposal.workstreamId) {
     announceWorkstreamApplication(proposal, guildSettings)
   } else {
     announceProposal(proposal, guildSettings)
   }
+  */
+
+  // Announce all proposals in the "new-tasks" channel. Even if it's application for a task
+  announceProposal(proposal, guildSettings)
 }
 
 const onNewTask = async (task) => {
