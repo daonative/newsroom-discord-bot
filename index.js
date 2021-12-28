@@ -69,7 +69,7 @@ const onCommandNewTask = async (message, args) => {
   console.log(room)
 
   const title = args.join(' ')
-  const url = `https://newsroom.xyz/rooms/${room.id}/post?title=${encodeURIComponent(title)}`
+  const url = `https://daonative.xyz/rooms/${room.id}/post?title=${encodeURIComponent(title)}`
 
   message.channel.send(
     `Create your task here: ${url}`
@@ -86,7 +86,7 @@ const announceProposal = async (proposal, guildSettings) => {
   const guild = await client.guilds.fetch(guildSettings.guildId)
   const announcementsChannel = await guild.channels.fetch(guildSettings.announcementsChannelId)
 
-  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
+  const proposalLink = `https://daonative.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
   const msg = await announcementsChannel.send(`💡 New proposal: **${proposal.title} (${proposal.amount} MATIC)**
 ${proposalLink}
 
@@ -111,7 +111,7 @@ const announceWorkstreamApplication = async (proposal, guildSettings) => {
 
   if (!workstreamChannel) return
 
-  const proposalLink = `https://newsroom.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
+  const proposalLink = `https://daonative.xyz/rooms/${proposal.room}/proposals/${proposal.proposalId}`
   const msg = await workstreamChannel.send(`🤺 **${proposal.author}** applied for this task!
 ${proposalLink}
 
@@ -175,7 +175,7 @@ const onNewTask = async (task) => {
   const newsroomCategoryChannel = await guild.channels.fetch(guildSettings.newsroomCategoryChannelId)
 
   // Task link and channel name
-  const taskLink = `https://newsroom.xyz/rooms/${task.room}/${task.id}`
+  const taskLink = `https://daonative.xyz/rooms/${task.room}/${task.id}`
   const taskSlug = slugify(task.title).toLowerCase()
   const taskChannelName = `${guildSettings.prependRoomName ? `${task.room}-` : ''}${taskSlug}`
 
